@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Google Chrome Remote Desktop Frame Color",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Sets the window frame (title bar) and launch splash color for the Google Chrome Remote Desktop Web App.",
   "permissions": [
     "storage",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "scripting"
   ],
   "host_permissions": [
     "https://remotedesktop.google.com/*"
@@ -23,6 +24,7 @@
         "https://remotedesktop.google.com/*"
       ],
       "js": [
+        "src/shared.js",
         "src/content.js"
       ],
       "run_at": "document_start"

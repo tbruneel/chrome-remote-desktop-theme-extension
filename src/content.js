@@ -1,17 +1,54 @@
 (() => {
   'use strict';
 
-  const MODE_KEY = 'frameMode';
-  const COLOR_KEY = 'frameColor';
-  const LOCAL_CACHE_KEY = '__crd_pwa_frame_color_v3__';
-  const LIGHT_COLOR = '#fafafa';
-  const DARK_COLOR = '#212121';
+  const Shared = globalThis.FrameColorShared;
+  if (!Shared || !Shared.claimRuntimeGuard('__frameColorContentGuard__')) {
+    return;
+  }
 
+  const LOCAL_CACHE_KEY = '__crd_frame_color_cache__';
+  const LEGACY_CACHE_KEYS = ['__crd_pwa_frame_color_v3__'];
+
+  const LIGHT_COLOR = '#fafafa'; // rgb(250, 250, 250)
+  const DARK_COLOR  = '#212121'; // rgb(33, 33, 33)
+
+  let tornDown = false;
+  let storageReady = false;
   let currentMode = 'auto';
-  let manualColor = LIGHT_COLOR;
-  let activeColor = LIGHT_COLOR;
+  let manualColor = Shared.DEFAULT_COLOR;
+  let activeColor = Shared.DEFAULT_COLOR;
+  let lastSyncedStorageColor = '';
 
-  function detectThemeColorFromStorage() {
+  function readCachedColor() {
+    try {
+      const direct = window.localStorage.getItem(LOCAL_CACHE_KEY);
+      if (Shared.isValidHexColor(direct)) {
+        return direct.toLowerCase();
+      }
+      for (const legacyKey of LEGACY_CACHE_KEYS) {
+        const legacy = window.localStorage.getItem(legacyKey);
+        if (Shared.isValidHexColor(legacy)) {
+          const normalized = legacy.toLowerCase();
+          window.localStorage.setItem(LOCAL_CACHE_KEY, normalized);
+          window.localStorage.removeItem(legacyKey);
+          return normalized;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function writeCachedColor(color) {
+    if (!Shared.isValidHexColor(color)) return;
+    try {
+      window.localStorage.setItem(LOCAL_CACHE_KEY, color.toLowerCase());
+    } catch (_) {}
+  }
+
+  function detectFallbackStorageColor() {
+    const cached = readCachedColor();
+    if (cached) return cached;
+
     try {
       for (let i = 0; i < window.localStorage.length; i++) {
         const k = window.localStorage.key(i);
@@ -21,115 +58,125 @@
           if (val === 'false') return LIGHT_COLOR;
         }
       }
-      const cached = window.localStorage.getItem(LOCAL_CACHE_KEY);
-      if (cached && /^#[0-9a-fA-F]{6}$/.test(cached)) {
-        return cached.toLowerCase();
-      }
     } catch (_) {}
+
     return LIGHT_COLOR;
   }
 
-  function detectThemeColorFromDom() {
+  function resolveBaseRgbFromDom() {
     if (!document.body) return null;
 
     if (document.body.classList.contains('fv4cze')) {
-      return DARK_COLOR;
+      return [33, 33, 33]; // #212121
     }
     if (document.body.classList.contains('afF7cb')) {
-      return LIGHT_COLOR;
+      return [250, 250, 250]; // #fafafa
     }
 
     try {
-      const pageBg = window.getComputedStyle(document.body).getPropertyValue('--page-bg-color').trim();
-      if (pageBg && /^#[0-9a-fA-F]{6}$/.test(pageBg)) {
-        return pageBg.toLowerCase();
+      const pageBg = window.getComputedStyle(document.body).getPropertyValue('--page-bg-color');
+      if (pageBg) {
+        const rgb = Shared.resolveOpaqueRgb(pageBg);
+        if (rgb) return rgb;
       }
     } catch (_) {}
 
     return null;
   }
 
-  activeColor = detectThemeColorFromStorage();
-
-  let applying = false;
-
-  function applyFrameColor(color) {
-    if (applying || !color) return;
-    applying = true;
+  function detectActiveOverlay() {
     try {
-      const targetRoot = document.head || document.documentElement;
-      if (!targetRoot) return;
-
-      const metas = document.querySelectorAll('meta[name="theme-color"]');
-      if (metas.length === 0) {
-        const meta = document.createElement('meta');
-        meta.setAttribute('name', 'theme-color');
-        meta.setAttribute('content', color);
-        targetRoot.appendChild(meta);
-      } else {
-        metas.forEach((meta, index) => {
-          if (index === 0) {
-            if (meta.getAttribute('content') !== color) {
-              meta.setAttribute('content', color);
-            }
-            if (meta.hasAttribute('media')) {
-              meta.removeAttribute('media');
-            }
-          } else {
-            meta.remove();
-          }
-        });
-      }
-    } finally {
-      applying = false;
-    }
-  }
-
-  function persistDetectedColor(color) {
-    try {
-      window.localStorage.setItem(LOCAL_CACHE_KEY, color);
-    } catch (_) {}
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-      chrome.storage.sync.get({ [COLOR_KEY]: '' }, (items) => {
-        if (items[COLOR_KEY] !== color) {
-          chrome.storage.sync.set({ [COLOR_KEY]: color });
+      // Google Wiz modal dialog scrim (`.llhEMd.iWO5td`, rgba(0, 0, 0, 0.5), z-index: 5000)
+      const scrims = document.querySelectorAll('.llhEMd.iWO5td');
+      for (const scrim of scrims) {
+        if (scrim.getAttribute('aria-hidden') === 'true') continue;
+        const style = window.getComputedStyle(scrim);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.pointerEvents === 'none') {
+          continue;
         }
-      });
-    }
+        return Shared.parseCssColorWithAlpha(style.backgroundColor) || { r: 0, g: 0, b: 0, a: 0.5 };
+      }
+    } catch (_) {}
+    return null;
   }
 
-  function refreshColor() {
-    if (currentMode === 'manual') {
-      activeColor = manualColor;
-      try {
-        window.localStorage.setItem(LOCAL_CACHE_KEY, activeColor);
-      } catch (_) {}
-      applyFrameColor(activeColor);
+  function detectLiveThemeColors() {
+    const domRgb = resolveBaseRgbFromDom();
+    const baseRgb = domRgb || Shared.resolveOpaqueRgb(detectFallbackStorageColor()) || [250, 250, 250];
+    const baseColor = Shared.rgbToHex(baseRgb[0], baseRgb[1], baseRgb[2]);
+    const overlay = domRgb ? detectActiveOverlay() : null;
+    const displayColor = overlay ? Shared.blendOverlayOntoBase(baseRgb, overlay) : baseColor;
+    return { displayColor, baseColor };
+  }
+
+  function syncBaseColorToStorage(baseColor) {
+    if (!Shared.isValidHexColor(baseColor)) return;
+    const normalized = baseColor.toLowerCase();
+    writeCachedColor(normalized);
+
+    if (!storageReady || currentMode !== 'auto' || normalized === lastSyncedStorageColor) {
+      return;
+    }
+    if (!Shared.isContextValid() || !chrome.storage || !chrome.storage.sync) {
       return;
     }
 
-    const domColor = detectThemeColorFromDom();
-    const nextColor = domColor || detectThemeColorFromStorage();
-    if (nextColor !== activeColor) {
-      activeColor = nextColor;
-      persistDetectedColor(activeColor);
-    }
-    applyFrameColor(activeColor);
+    lastSyncedStorageColor = normalized;
+    try {
+      chrome.storage.sync.get({ [Shared.COLOR_KEY]: '' }, (items) => {
+        if (!Shared.isContextValid() || !items) return;
+        if (items[Shared.COLOR_KEY] !== normalized) {
+          chrome.storage.sync.set({ [Shared.COLOR_KEY]: normalized });
+        }
+      });
+    } catch (_) {}
   }
 
-  applyFrameColor(activeColor);
+  function refreshColor() {
+    if (!Shared.isContextValid()) {
+      teardown();
+      return;
+    }
+
+    if (currentMode === 'manual') {
+      activeColor = manualColor;
+      writeCachedColor(activeColor);
+      Shared.applyThemeColorMeta(activeColor);
+      return;
+    }
+
+    const { displayColor, baseColor } = detectLiveThemeColors();
+    activeColor = displayColor;
+    syncBaseColorToStorage(baseColor);
+    Shared.applyThemeColorMeta(activeColor);
+  }
+
+  // Apply startup color immediately at document_start to prevent any title bar flash
+  activeColor = detectFallbackStorageColor();
+  Shared.applyThemeColorMeta(activeColor);
 
   const observer = new MutationObserver(() => {
     refreshColor();
   });
 
+  function teardown() {
+    if (tornDown) return;
+    tornDown = true;
+    try {
+      observer.disconnect();
+    } catch (_) {}
+    window.removeEventListener('storage', refreshColor);
+  }
+
+  window.addEventListener('storage', refreshColor);
+
   function startObserver() {
-    if (!document.documentElement) return;
+    if (!document.documentElement || !Shared.isContextValid()) return;
     observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['content', 'name', 'media', 'class', 'style']
+      attributeFilter: ['content', 'name', 'media', 'class', 'style', 'aria-hidden']
     });
     refreshColor();
   }
@@ -140,32 +187,40 @@
     document.addEventListener('DOMContentLoaded', startObserver, { once: true });
   }
 
-  window.addEventListener('load', () => {
-    refreshColor();
-    setTimeout(refreshColor, 500);
-  });
+  window.addEventListener('load', refreshColor);
 
-  window.addEventListener('storage', refreshColor);
-
-  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-    chrome.storage.sync.get({ [MODE_KEY]: 'auto', [COLOR_KEY]: LIGHT_COLOR }, (items) => {
-      currentMode = items[MODE_KEY] === 'manual' ? 'manual' : 'auto';
-      if (items[COLOR_KEY] && /^#[0-9a-fA-F]{6}$/.test(items[COLOR_KEY])) {
-        manualColor = items[COLOR_KEY].toLowerCase();
-      }
-      refreshColor();
-    });
-
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'sync') {
-        if (changes[MODE_KEY]) {
-          currentMode = changes[MODE_KEY].newValue === 'manual' ? 'manual' : 'auto';
+  try {
+    if (Shared.isContextValid() && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.get(
+        { [Shared.MODE_KEY]: 'auto', [Shared.COLOR_KEY]: Shared.DEFAULT_COLOR },
+        (items) => {
+          if (!Shared.isContextValid() || !items) return;
+          storageReady = true;
+          currentMode = items[Shared.MODE_KEY] === 'manual' ? 'manual' : 'auto';
+          manualColor = Shared.normalizeHexColor(items[Shared.COLOR_KEY], Shared.DEFAULT_COLOR);
+          refreshColor();
         }
-        if (changes[COLOR_KEY] && changes[COLOR_KEY].newValue && /^#[0-9a-fA-F]{6}$/.test(changes[COLOR_KEY].newValue)) {
-          manualColor = changes[COLOR_KEY].newValue.toLowerCase();
+      );
+
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (!Shared.isContextValid()) {
+          teardown();
+          return;
         }
-        refreshColor();
-      }
-    });
-  }
+        if (area === 'sync') {
+          if (changes[Shared.MODE_KEY]) {
+            const nextMode = changes[Shared.MODE_KEY].newValue === 'manual' ? 'manual' : 'auto';
+            if (nextMode === 'auto' && currentMode !== 'auto') {
+              lastSyncedStorageColor = '';
+            }
+            currentMode = nextMode;
+          }
+          if (changes[Shared.COLOR_KEY] && Shared.isValidHexColor(changes[Shared.COLOR_KEY].newValue)) {
+            manualColor = changes[Shared.COLOR_KEY].newValue.toLowerCase();
+          }
+          refreshColor();
+        }
+      });
+    }
+  } catch (_) {}
 })();
