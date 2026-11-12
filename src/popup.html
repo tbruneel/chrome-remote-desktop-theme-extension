@@ -7,6 +7,9 @@
 </head>
 <body>
   <div class="header">Frame Color</div>
+  <button type="button" id="autoBtn" class="auto-btn active" title="Automatically detect the app's Light/Dark theme">
+    Auto (Match App Theme)
+  </button>
   <div class="picker-row">
     <input type="color" id="colorPicker" value="#fafafa" aria-label="Color Picker">
     <input type="text" id="hexInput" value="#fafafa" maxlength="7" spellcheck="false" aria-label="Hex Color">
@@ -18,8 +21,8 @@
     <button type="button" class="swatch" data-color="#ffffff" title="Pure White (#ffffff)">
       <span class="dot" style="background:#ffffff"></span>White
     </button>
-    <button type="button" class="swatch" data-color="#1f1f1f" title="Dark (#1f1f1f)">
-      <span class="dot" style="background:#1f1f1f"></span>Dark
+    <button type="button" class="swatch" data-color="#212121" title="Default Dark (#212121)">
+      <span class="dot" style="background:#212121"></span>Dark
     </button>
     <button type="button" class="swatch" data-color="#131314" title="Deep Dark (#131314)">
       <span class="dot" style="background:#131314"></span>Deep Dark
