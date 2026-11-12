@@ -96,6 +96,9 @@ function reinjectOpenTabs() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.remove('frameMode', () => {
+    void chrome.runtime.lastError;
+  });
   syncRuleFromStorage();
   reinjectOpenTabs();
 });

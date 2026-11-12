@@ -473,11 +473,11 @@ pre:hover > .code-block-copy-button,
 </head>
 <body>
 <h1 id="google-chrome-remote-desktop-extension-google-chrome-remote-desktop-extension">Google Chrome Remote Desktop Extension (<code>google-chrome-remote-desktop-extension</code>)</h1>
-<p>A lightweight Manifest V3 Chrome extension whose sole purpose is to synchronize and lock the window frame (title bar) color of the <strong>Google Chrome Remote Desktop</strong> Web App (<code>https://remotedesktop.google.com/</code>).</p>
+<p>A zero-configuration Manifest V3 Chrome extension that automatically synchronizes the window frame (title bar) and launch splash color of the <strong>Google Chrome Remote Desktop</strong> Web App (<code>https://remotedesktop.google.com/</code>).</p>
 <hr>
 <h2 id="background">Background</h2>
 <p>By default, <code>https://remotedesktop.google.com/</code> omits <code>&lt;meta name=&quot;theme-color&quot;&gt;</code> from its HTML <code>&lt;head&gt;</code> and omits <code>theme_color</code> from <code>/_/RemotingUi/manifest.json</code>, causing Chrome to render the standalone PWA window with an unmatched default title bar.</p>
-<p>In <strong>Auto (Match App Theme)</strong> mode (enabled by default), <code>src/content.js</code> automatically detects Chrome Remote Desktop's active Light/Dark theme (<code>body.afF7cb</code>, <code>body.fv4cze</code>, <code>--page-bg-color</code>, and <code>localStorage['dark-mode$*']</code>) as well as active modal dialog scrims (<code>.llhEMd.iWO5td</code>), keeping <code>&lt;meta name=&quot;theme-color&quot;&gt;</code> and the manifest <code>theme_color</code> / <code>background_color</code> synchronized in real time:</p>
+<p>This extension automatically detects Chrome Remote Desktop's active Light/Dark theme (<code>body.afF7cb</code>, <code>body.fv4cze</code>, <code>--page-bg-color</code>, and <code>localStorage['dark-mode$*']</code>) as well as active modal dialog scrims (<code>.llhEMd.iWO5td</code>), keeping <code>&lt;meta name=&quot;theme-color&quot;&gt;</code> and the manifest <code>theme_color</code> / <code>background_color</code> synchronized in real time:</p>
 <table>
 <thead>
 <tr>
@@ -499,7 +499,6 @@ pre:hover > .code-block-copy-button,
 </tr>
 </tbody>
 </table>
-<p>You can switch to manual mode at any time via the extension popup to pick a custom hex color or select one of the 4 preset swatches (<code>#fafafa</code>, <code>#ffffff</code>, <code>#212121</code>, <code>#131314</code>).</p>
 <hr>
 <h2 id="repository-structure">Repository Structure</h2>
 <pre class="hljs"><code class="language-text"><div>google-chrome-remote-desktop-extension/
@@ -509,9 +508,6 @@ pre:hover > .code-block-copy-button,
 ├── src/
 │   ├── background.js               # Manifest redirect rule &amp; live tab re-injection on reload
 │   ├── content.js                  # Top-frame theme + dialog scrim observer &amp; &lt;meta&gt; lock
-│   ├── popup.css                   # Extension popup styles
-│   ├── popup.html                  # Extension popup markup
-│   ├── popup.js                    # Auto mode toggle, color picker, hex input &amp; preset swatches
 │   └── shared.js                   # Shared constants, hex validation, color blending &amp; DOM helpers
 ├── manifest.json                   # Chrome Extension Manifest V3
 ├── readme.md                       # Documentation (Markdown source)
@@ -523,7 +519,7 @@ pre:hover > .code-block-copy-button,
 <li>Open <code>chrome://extensions/</code> in Google Chrome.</li>
 <li>Enable <strong>Developer mode</strong> (top-right toggle).</li>
 <li>Click <strong>Load unpacked</strong> and select <code>D:\Development\google-chrome-remote-desktop-extension</code> (or click <strong>Reload (<code>↻</code>)</strong> if already loaded).</li>
-<li>Open the <strong>Chrome Remote Desktop</strong> web app (<code>https://remotedesktop.google.com/access/</code>) — the window frame automatically matches your active Light/Dark theme (<code>#fafafa</code> or <code>#212121</code>) and dims seamlessly when modal dialogs open, or can be overridden via the extension icon in the title bar.</li>
+<li>Open the <strong>Chrome Remote Desktop</strong> web app (<code>https://remotedesktop.google.com/access/</code>) — the window frame automatically matches your active Light/Dark theme (<code>#fafafa</code> or <code>#212121</code>) and dims seamlessly when modal dialogs open.</li>
 </ol>
 
 <script>
