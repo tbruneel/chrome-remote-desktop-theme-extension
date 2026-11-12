@@ -1,4 +1,4 @@
-# Google Chrome Remote Desktop Extension (`google-chrome-remote-desktop-extension`)
+# Google Chrome Remote Desktop Theme Extension (`chrome-remote-desktop-theme-extension`)
 
 A zero-configuration Manifest V3 Chrome extension that automatically synchronizes the window frame (title bar) and launch splash color of the **Google Chrome Remote Desktop** Web App (`https://remotedesktop.google.com/`).
 
@@ -20,7 +20,7 @@ This extension automatically detects Chrome Remote Desktop's active Light/Dark t
 ## Repository Structure
 
 ```text
-google-chrome-remote-desktop-extension/
+chrome-remote-desktop-theme-extension/
 ├── .agents/
 │   └── rules/
 │       └── rules-git.md            # Git commit identity rules
@@ -39,5 +39,5 @@ google-chrome-remote-desktop-extension/
 
 1. Open `chrome://extensions/` in Google Chrome.
 2. Enable **Developer mode** (top-right toggle).
-3. Click **Load unpacked** and select `D:\Development\google-chrome-remote-desktop-extension` (or click **Reload (`↻`)** if already loaded).
+3. Click **Load unpacked** and select `D:\Development\chrome-remote-desktop-theme-extension` (or click **Reload (`↻`)** if already loaded).
 4. Open the **Chrome Remote Desktop** web app (`https://remotedesktop.google.com/access/`) — the window frame automatically matches your active Light/Dark theme (`#fafafa` or `#212121`) and dims seamlessly when modal dialogs open.
