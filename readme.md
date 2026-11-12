@@ -18,6 +18,7 @@ google-chrome-remote-desktop-extension/
 │   └── rules/
 │       └── rules-git.md            # Git commit identity rules
 ├── src/
+│   ├── background.js               # declarativeNetRequest redirect for /_/RemotingUi/manifest.json
 │   ├── content.js                  # document_start theme-color injection & MutationObserver
 │   ├── popup.css                   # Extension popup styles
 │   ├── popup.html                  # Extension popup markup
