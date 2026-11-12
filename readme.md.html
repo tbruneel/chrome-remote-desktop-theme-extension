@@ -476,7 +476,7 @@ pre:hover > .code-block-copy-button,
 <p>A lightweight Manifest V3 Chrome extension whose sole purpose is to set and lock the window frame (title bar) color of the <strong>Google Chrome Remote Desktop</strong> Web App (<code>https://remotedesktop.google.com/</code>).</p>
 <hr>
 <h2 id="background">Background</h2>
-<p>By default, <code>https://remotedesktop.google.com/</code> omits <code>&lt;meta name=&quot;theme-color&quot;&gt;</code> from its HTML <code>&lt;head&gt;</code> and omits <code>theme_color</code> from <code>/_/RemotingUi/manifest.json</code>. This extension injects and locks <code>&lt;meta name=&quot;theme-color&quot;&gt;</code> at <code>document_start</code> so the standalone PWA window frame color can be explicitly controlled (defaulting to <code>#ffffff</code> white, or any custom hex color selected via the extension popup).</p>
+<p>By default, <code>https://remotedesktop.google.com/</code> omits <code>&lt;meta name=&quot;theme-color&quot;&gt;</code> from its HTML <code>&lt;head&gt;</code> and omits <code>theme_color</code> from <code>/_/RemotingUi/manifest.json</code>. This extension injects and locks <code>&lt;meta name=&quot;theme-color&quot;&gt;</code> at <code>document_start</code> so the standalone PWA window frame color can be explicitly controlled (defaulting to <code>#fafafa</code> / <code>rgb(250, 250, 250)</code>, or any custom hex color selected via the extension popup).</p>
 <hr>
 <h2 id="repository-structure">Repository Structure</h2>
 <pre class="hljs"><code class="language-text"><div>google-chrome-remote-desktop-extension/

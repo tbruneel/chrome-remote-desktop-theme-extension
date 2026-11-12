@@ -6,7 +6,7 @@ A lightweight Manifest V3 Chrome extension whose sole purpose is to set and lock
 
 ## Background
 
-By default, `https://remotedesktop.google.com/` omits `<meta name="theme-color">` from its HTML `<head>` and omits `theme_color` from `/_/RemotingUi/manifest.json`. This extension injects and locks `<meta name="theme-color">` at `document_start` so the standalone PWA window frame color can be explicitly controlled (defaulting to `#ffffff` white, or any custom hex color selected via the extension popup).
+By default, `https://remotedesktop.google.com/` omits `<meta name="theme-color">` from its HTML `<head>` and omits `theme_color` from `/_/RemotingUi/manifest.json`. This extension injects and locks `<meta name="theme-color">` at `document_start` so the standalone PWA window frame color can be explicitly controlled (defaulting to `#fafafa` / `rgb(250, 250, 250)`, or any custom hex color selected via the extension popup).
 
 ---
 
